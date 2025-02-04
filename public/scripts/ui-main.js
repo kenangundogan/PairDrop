@@ -336,13 +336,14 @@ class BackgroundCanvas {
         this.c = $$('canvas');
         this.cCtx = this.c.getContext('2d');
         this.$footer = $$('footer');
+        
+        this.step = 0;
+        this.animationRunning = false;
 
         // redraw canvas
         Events.on('resize', _ => this.init());
         Events.on('redraw-canvas', _ => this.init());
         Events.on('translation-loaded', _ => this.init());
-
-        // ShareMode
         Events.on('share-mode-changed', e => this.onShareModeChanged(e.detail.active));
     }
 
@@ -353,13 +354,14 @@ class BackgroundCanvas {
     init() {
         let oldW = this.w;
         let oldH = this.h;
-        let oldOffset = this.offset
+        let oldOffset = this.offset;
+        
         this.w = document.documentElement.clientWidth;
         this.h = document.documentElement.clientHeight;
         this.offset = this.$footer.offsetHeight - 27;
         if (this.h >= 800) this.offset += 10;
 
-        if (oldW === this.w && oldH === this.h && oldOffset === this.offset) return; // nothing has changed
+        if (oldW === this.w && oldH === this.h && oldOffset === this.offset) return; // Değişiklik yoksa tekrar çizme
 
         this.c.width = this.w;
         this.c.height = this.h;
@@ -369,15 +371,14 @@ class BackgroundCanvas {
         this.baseColor = '165, 165, 165';
         this.baseOpacity = 0.3;
 
-        this.drawCircles(this.cCtx);
+        this.startAnimation();
     }
 
     onShareModeChanged(active) {
         this.baseColor = active ? '165, 165, 255' : '165, 165, 165';
         this.baseOpacity = active ? 0.5 : 0.3;
-        this.drawCircles(this.cCtx);
+        this.startAnimation();
     }
-
 
     drawCircle(ctx, radius) {
         ctx.beginPath();
@@ -391,7 +392,19 @@ class BackgroundCanvas {
     drawCircles(ctx) {
         ctx.clearRect(0, 0, this.w, this.h);
         for (let i = 0; i < 13; i++) {
-            this.drawCircle(ctx, this.dw * i + 33 + 66);
+            this.drawCircle(ctx, this.dw * i + this.step % this.dw);
         }
+    }
+
+    startAnimation() {
+        if (this.animationRunning) return;
+        this.animationRunning = true;
+
+        const animate = () => {
+            this.step += 1;
+            this.drawCircles(this.cCtx);
+            requestAnimationFrame(animate);
+        };
+        animate();
     }
 }
